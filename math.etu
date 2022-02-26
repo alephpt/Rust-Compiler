@@ -1,0 +1,9 @@
+do addition: num1, num2 -
+  ^ (num1 + num2)
+
+do entry -
+  log <- "Enter a number.".
+  num1 <- takeInput?
+  log <- "You entered a ", num1, ". \nEnter another number.".
+  takeInput? -> num2.
+  log <- "You entered a ", num2, " which sums up to ", (addition: num1, num2).

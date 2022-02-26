@@ -1,0 +1,35 @@
+pub enum Token {
+    // Literal Terminator Symbols
+    Eq, NotEq, Comma,               //  =   !   ,
+    Dot, Dash, Tilda,               //  .   -   ~
+    Semicolon, Doublecolon,         //  ;  ::
+    LeftParen, RightParen,          //  (   )
+    LeftBrace, RightBrace,          //  {   }
+    LeftArrow, RightArrow,          //  <   >
+    LeftWhack, RightWhack,          //  [   ]
+    FwdSlash, BackSlack             //  /   \
+
+    // KeyWords
+    void, 
+    int, 
+    bool,
+    char,
+    if,
+    else,
+    while,
+    do,
+    return,
+    false,
+    true,
+    null,
+    hd,
+    tl,
+    fst,
+    snd,
+    put,
+    get,
+
+    // (rest omitted)
+
+
+}
