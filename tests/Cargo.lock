@@ -3,15 +3,6 @@
 version = 3
 
 [[package]]
-name = "idiom"
-version = "0.1.0"
-dependencies = [
- "idiom_core",
- "tests",
- "thiserror",
-]
-
-[[package]]
 name = "idiom_core"
 version = "0.1.0"
 dependencies = [
