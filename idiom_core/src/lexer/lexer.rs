@@ -181,7 +181,7 @@ impl<'a> Lexer<'a> {
                     }
 
                     if seen_hex {
-                        break Ok(TokenType::Numeric{ raw: num, base: NumericBase::Hexidecimal, kind: NumericKind::Whole });
+                        break Ok(TokenType::Numeric{ raw: num, base: NumericBase::Hexadecimal, kind: NumericKind::Whole });
                     }
 
                     if seen_oct {

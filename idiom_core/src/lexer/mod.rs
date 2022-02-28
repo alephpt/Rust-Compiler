@@ -30,7 +30,7 @@ pub enum LexerError {
     #[error("Invalid Binary Value: {bin:?}")]
     InvalidBinaryValue { bin: String },
 
-    #[error("Invalid Hexidecimal Value: {hex:?}")]
+    #[error("Invalid Hexadecimal Value: {hex:?}")]
     InvalidHexValue { hex: String },
 
     #[error("Invalid Octal Value: {oct:?}")]
@@ -100,6 +100,6 @@ pub enum NumericBase {
     Binary,
     Octal,
     Denary,
-    Hexidecimal,
+    Hexadecimal,
     Base64,
 }
