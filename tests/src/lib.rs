@@ -8,12 +8,12 @@ pub use idiom_core::*;
 mod tests {
 
     #[test]
-    fn eof() {
+    fn type_eof() {
         assert_eq!(tokenize!(EOF), crate::TokenType::EOF)
     }
 
     #[test]
-    fn delimitters() {
+    fn type_delimitters() {
         assert_eq!(tokenize!(Delimit ',' (Open 0)), crate::TokenType::Delimiters{ raw: ',', kind: crate::DelimitersKind::Opening(0) });
         assert_eq!(tokenize!(Delimit '-' (Close 0)), crate::TokenType::Delimiters{ raw: '-', kind: crate::DelimitersKind::Closing(0) });
         assert_eq!(tokenize!(Delimit '|' (Open 0)), crate::TokenType::Delimiters{ raw: '|', kind: crate::DelimitersKind::Opening(0) });
@@ -21,11 +21,11 @@ mod tests {
     }
 
     #[test]
-    fn numerics() {
+    fn type_numerics() {
         assert_eq!(tokenize!(Num ("634".to_string()) Den WholeNo), 
                    crate::TokenType::Numeric{ 
                        raw: "634".to_string(), 
-                       base: crate::NumericBase::Denary, 
+                       base: crate::NumericBase::Decimal, 
                        kind: crate::NumericKind::Whole 
                    });
 
@@ -51,19 +51,19 @@ mod tests {
         assert_eq!(tokenize!(Num ("1e+194".to_string()) Den Exponent), 
                    crate::TokenType::Numeric{ 
                        raw: "1e+194".to_string(), 
-                       base: crate::NumericBase::Denary, 
+                       base: crate::NumericBase::Decimal, 
                        kind: crate::NumericKind::Exponential 
                    });
         assert_eq!(tokenize!(Num ("0.11235".to_string()) Den Fraction), 
                    crate::TokenType::Numeric{ 
                        raw: "0.11235".to_string(), 
-                       base: crate::NumericBase::Denary, 
+                       base: crate::NumericBase::Decimal, 
                        kind: crate::NumericKind::Fractional
                    });
         assert_eq!(tokenize!(Num ("3.14".to_string()) Den Fraction),                   
                    crate::TokenType::Numeric{ 
                        raw: "3.14".to_string(), 
-                       base: crate::NumericBase::Denary, 
+                       base: crate::NumericBase::Decimal, 
                        kind: crate::NumericKind::Fractional
                    });
         assert_eq!(tokenize!(Num ("True".to_string()) Bin Boolean), 
@@ -81,10 +81,7 @@ mod tests {
     }
 
     #[test]
-    fn characters() {
+    fn type_characters() {
         assert_eq!(tokenize!(Char 'c'), crate::TokenType::Character('c'))
     }
-
-
-
 }

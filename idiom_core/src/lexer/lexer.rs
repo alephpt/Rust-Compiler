@@ -1,3 +1,4 @@
+
 use crate::lexer::*;
 
 pub struct Lexer<'a> {
@@ -10,6 +11,26 @@ pub struct Lexer<'a> {
 
     chars: std::iter::Peekable<std::str::Chars<'a>>,
     parameter_state: std::collections::HashMap<char, ParameterDepthType>,
+}
+
+macro_rules! ingest {
+    ($self:ident, $($inner:tt),*) => {
+        if let Some(c) = $self.chars.peek() {
+            if ingest!(impl c, $($inner),*) {
+                let temp = *c;
+                $self.consume_space();
+                Some(temp)
+            } else {
+                None
+            }
+        } else {
+            None
+        }
+    };
+
+    (impl , ) => (false);
+    (impl $c:ident, $item:tt) => (*$c == $item);
+    (impl $c:ident, $item:tt, $($rest:tt), +) => (ingest!(impl $c, $item) || ingest!(impl $c, $($rest),+));
 }
 
 
@@ -44,6 +65,39 @@ impl<'a> Lexer<'a> {
         }
     }
 
+    fn map_base_to_num(n: &NumericBase) -> u32 {
+        match n {
+            NumericBase::Binary => 2,
+            NumericBase::Octal => 8,
+            NumericBase::Decimal => 10,
+            NumericBase::Hexadecimal => 16,
+            NumericBase::Base64 => 64,
+            _ => panic!("Invalid Base To Number Mapping")
+        }
+    }
+
+    fn map_num2base(n: &u32) -> NumericBase {
+         match n {
+            2 => NumericBase::Binary,
+            8 => NumericBase::Octal,
+            10 => NumericBase::Decimal,
+            16 => NumericBase::Hexadecimal,
+            64 => NumericBase::Base64,
+            _ => panic!("Invalid Number to Base Mapping")
+        }   
+    }
+
+    fn map_num_to_base(n: &str) -> Result<NumericBase, LexerError> {
+        match n {
+            "2" => Ok(NumericBase::Binary),
+            "8" => Ok(NumericBase::Octal),
+            "10" => Ok(NumericBase::Decimal),
+            "16" => Ok(NumericBase::Hexadecimal),
+            "64" => Ok(NumericBase::Base64),
+            _ => Err(LexerError::InvalidNumericBase { base: n.to_string() })
+        }
+    }
+
     fn open_delimiters(&mut self, c: &char) -> ParameterDepthType {
         if let Some(v) = self.parameter_state.get_mut(&c) {
             *v += 1;
@@ -68,15 +122,33 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn consume_digit(&mut self, num: &String, exp_radix: u32) -> Result<char, LexerError> {
-        match self.chars.next(){
-            None => {
-                Err(LexerError::NumericLiteralCollapse{ received: num.to_string() })
-            },
-            Some(c) if !c.is_digit(exp_radix) => {
-                Err(LexerError::NumericLiteralCollapse{ received: num.to_string() })
-            },
-            Some(c) => Ok(c)
+    fn digest_digit(&mut self, exp_radix: u32, fractional: &mut bool, b64: bool, empty: bool) -> Result<String, LexerError> {
+        let mut raw = String::new();
+        loop{
+            match self.chars.peek(){
+                None => {
+                    break if empty || raw.len() > 0 {
+                        Ok(raw)
+                    } else {
+                        Err(LexerError::NumericLiteralCollapse{ 
+                            received: TokenType::EOF,
+                            expected: Numeric {
+                                raw: "<int>".to_string(),
+                                base: NumericBase::Any,
+                                kind: NumericKind::Any,
+                            }
+                        })
+                    }
+                },
+                Some(c) if c.is_whitespace() || (*c == 'b' || *c == 'B' || *c == 'e' || *c == 'E' || *c == '.') && !*fractional => break Ok(raw),
+                Some(c) if (c.is_digit(exp_radix) || b64) || !c.is_whitespace() => { 
+                    raw.push(*c); 
+                    self.consume_space(); 
+                },
+                Some(c) => {
+                    break Err(LexerError::UnknownNumericLiteral{ raw, received: *c })
+                },
+            }
         }
     }
 
@@ -88,121 +160,69 @@ impl<'a> Lexer<'a> {
         */
 
     fn parse_numbers(&mut self, start: char) -> Result<TokenType, LexerError> {
-       let mut seen_dot = false;
-       let mut seen_exp = false;
-       let mut seen_base = false;
-       let mut seen_hex = false;
-       let mut seen_bin = false;
-       let mut seen_oct = false;
-       let mut seen_b64 = false;
-       let mut base_radix=10;
-       let mut num = start.to_string();
+        let mut seen_b64 = false;
+        let mut seen_dec = false;
+        let mut base_radix = 10;
+        let mut raw = start.to_string();
+        let mut kind = NumericKind::Whole;
+        let mut base = NumericBase::Decimal;
 
-       if start == '.'{
-           num.push(self.consume_digit(&num, base_radix)?);
-           seen_dot = true;
-       }
+        // parse whole numbers and fractions
+        if start == '.'{
+            seen_dec = true;
+            raw += &self.digest_digit(base_radix, &mut seen_dec, seen_b64, false)?;
+            kind = NumericKind::Fractional;
+        } else if start.is_digit(base_radix){
+            raw += &self.digest_digit(base_radix, &mut seen_dec, seen_b64, true)?;
+            // println!("Passing Base");
+            if let Some(c) = ingest!(self, '.') {
+                raw.push(c);
+                raw += &self.digest_digit(base_radix, &mut seen_dec, seen_b64, false)?;
+                seen_dec = true;
+                kind = NumericKind::Fractional;
+            }
 
-       loop {
-           match self.chars.peek() {
-               Some(c) if *c == '.' && !seen_dot && !seen_exp && !seen_base => {
-                  num.push(*c);
-                  self.consume_space();
-                  seen_dot = true;
-               }, 
-               Some(c) if *c == 'e' || *c == 'E' && !seen_base => {
-                  num.push(*c);
-                  self.consume_space();
-                  seen_exp=true;
+        // parse Exponentials
+        if let Some(c) = ingest!(self, 'e', 'E') {
+            kind = NumericKind::Exponential;
+            base = NumericBase::Decimal;
+            raw.push(c);
+            
+            if let Some(c) = ingest!(self, '+', '-') {
+                raw.push(c);
+            }
 
-                  match self.chars.peek() {
-                      Some(c) if *c == '+' || *c == '-' => {
-                        num.push(*c);
-                        self.consume_space();
-                      },
-                      _ => {}
-                  }
+            raw += &self.digest_digit(base_radix, &mut seen_dec, seen_b64, false)?;
+        }
+        
+        // parse base components
+        if let Some(_c) = ingest!(self, 'b', 'B') {  // explicit base declaration
+            let raw_base = raw.clone();
+            raw.clear();
 
-                  num.push(self.consume_digit(&num, base_radix)?);
-               },
-               Some(c) if *c == 'b' && !seen_exp && !seen_dot && !seen_base => {  // explicit base declaration
-                  let base = num.clone();
-                  num.clear();
-                  self.consume_space();
+            base = Lexer::<'a>::map_num_to_base(&raw_base)?;
 
-                  if base == "2" {
-                      seen_base = true;
-                      seen_bin = true;
-                      base_radix = 2;
-                  } else
-                  if base == "8" {
-                      seen_base = true;
-                      seen_oct = true;
-                      base_radix = 8;
-                  } else
-                  if base == "16" {
-                      seen_hex = true;
-                      seen_base = true;
-                      base_radix = 16;
-                  } else 
-                  if base == "64" {
-                      seen_base = true;
-                      seen_b64 = true;
-                  } else {
-                      break Err(LexerError::InvalidBaseNumeric{ basereceived: base })
-                  }
-               },
-               Some(c) if !c.is_digit(base_radix) && !c.is_whitespace() && !seen_b64 => {
-                  num.push(*c);
-                  if seen_bin {
-                    break Err(LexerError::InvalidBinaryValue { bin: num });
-                  } else
-                  if seen_oct {
-                    break Err(LexerError::InvalidOctValue { oct: num });
-                  } else 
-                  if seen_hex {
-                    break Err(LexerError::InvalidHexValue { hex: num });
-                  } else {
-                    break Err(LexerError::UnknownNumericLiteral { unknown: num });
-                  }
-               },
-               Some(c) if c.is_digit(base_radix) || seen_b64 && !c.is_whitespace() => {
-                   num.push(*c);
-                   self.consume_space();
-               },
-               Some(c) if c.is_ascii_alphabetic() && !seen_base && !c.is_digit(base_radix) => {  
-                  num.push(*c);
-                  break Err(LexerError::NumericLiteralCollapse{ received: num });
-               }
-                _ => {  //exit condition
-                  if seen_base {
-                    if seen_bin {
-                        break Ok(TokenType::Numeric{ raw: num, base: NumericBase::Binary, kind: NumericKind::Whole });
-                    }
+            if base == NumericBase::Base64 { 
+                seen_b64 = true; 
+                base_radix = 10; }
+            else {       
+                base_radix = Lexer::<'a>::map_base_to_num(&base); 
+            }
 
-                    if seen_hex {
-                        break Ok(TokenType::Numeric{ raw: num, base: NumericBase::Hexadecimal, kind: NumericKind::Whole });
-                    }
+            raw += &self.digest_digit(base_radix, &mut seen_dec, seen_b64, false)?;
+        }
+        
 
-                    if seen_oct {
-                        break Ok(TokenType::Numeric{ raw: num, base: NumericBase::Octal, kind: NumericKind::Whole });
-                    }
 
-                    if seen_b64 {
-                        break Ok(TokenType::Numeric{ raw: num, base: NumericBase::Base64, kind: NumericKind::Whole });
-                    }
-                    
-                    if seen_exp {
-                        break Ok(TokenType::Numeric{ raw: num, base: NumericBase::Denary, kind: NumericKind::Exponential})
-                    }
-                  } else {
-                      break Ok(TokenType::Numeric{ raw: num, base: NumericBase::Denary, kind: if seen_dot { NumericKind::Fractional } else { NumericKind::Whole }  });
-                  }
-               }
-           }
-       }
-
-     //  Ok()
+        } else {
+            println!("Compiler Bug .. Not sure how we had a number that isn't a number?!");
+            return Err(LexerError::InvalidNumericLiteral {
+                base,
+                raw,
+                received: start.to_string(),
+            });
+        }
+        Ok(TokenType::Numeric{ raw, base, kind })
     }
     
 

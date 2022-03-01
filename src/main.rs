@@ -8,9 +8,11 @@ fn main() {
     let mut _lexer_delim = Lexer::new(",,{[([( ^ > $ < , < ) ) . . [ > ] > > ");
 
     let mut _lexer_num = Lexer::new("
+        2113
         .e
-        16b10Fe23
+        16b10FG23
         16b16.4
+        48b1239419
         16b10FA
         16bG
         203
@@ -19,7 +21,6 @@ fn main() {
         .798
         1e49
         1e+49
-        48b73
         .1e
         .2.
         e.5

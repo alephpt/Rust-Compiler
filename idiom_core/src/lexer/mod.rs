@@ -21,11 +21,14 @@ pub enum LexerError {
     #[error("Improper Parameterization with {symbol:?}")]
     MisMatchedDelimiters { symbol: char, requires: char },
 
-    #[error("Invalid Numeric Character. {received:?} Literal Fails")]
-    NumericLiteralCollapse { received: String },
+    #[error("Invalid Numeric Character for {base:?} Number: {raw:?} Fails. {received:?} is invalid.")]
+    InvalidNumericLiteral { base: NumericBase, raw: String, received: String }, // can we add expected behaviour?
 
-    #[error("Invalid Base Component. Base {basereceived:?} is Not a Valid Type.")]
-    InvalidBaseNumeric { basereceived: String },
+    #[error("Invalid Fraction: {raw:?}.")]
+    InvalidFraction { raw: String },
+    
+    #[error("Invalid Base Number. {base:?} is Not a Valid Base implimented in Idiom_Core.")]
+    InvalidNumericBase { base: String },
 
     #[error("Invalid Binary Value: {bin:?}")]
     InvalidBinaryValue { bin: String },
@@ -36,8 +39,11 @@ pub enum LexerError {
     #[error("Invalid Octal Value: {oct:?}")]
     InvalidOctValue { oct: String },
 
-    #[error("Unknown Numerical Literal: {unknown:?}")]
-    UnknownNumericLiteral{ unknown: String },
+    #[error("Numerical Literal Collapsed. Found: {received:?}, Expected: {expected:?}")]
+    NumericLiteralCollapse{ received: TokenType, expected: Numeric },
+
+    #[error("Unexpected Numeric Digest: {raw:?}, Received: {received:?}")]
+    UnknownNumericLiteral{ raw: String, received: char },
 
     #[error("Unidentified Token - {unknowns:?}")]
     UnknownPokemon { unknowns: String }
@@ -50,6 +56,7 @@ pub struct Delimiters {
     pub kind: DelimitersKind,
 }
 
+#[derive(Debug)]
 pub struct Numeric {
     pub raw: String,
     pub base: NumericBase,
@@ -89,6 +96,7 @@ pub enum DelimitersKind {
 
 #[derive(Debug, PartialEq)]
 pub enum NumericKind {
+    Any,
     Whole,
     Fractional,
     Exponential,
@@ -97,9 +105,10 @@ pub enum NumericKind {
 
 #[derive(Debug, PartialEq)]
 pub enum NumericBase {
+    Any,
     Binary,
     Octal,
-    Denary,
+    Decimal,
     Hexadecimal,
     Base64,
 }

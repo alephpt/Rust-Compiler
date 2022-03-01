@@ -38,8 +38,8 @@ macro_rules! call_numeric_base {
     (Oct) => {
         idiom_core::NumericBase::Octal
     };
-    (Den) => {
-        idiom_core::NumericBase::Denary
+    (Dec) => {
+        idiom_core::NumericBase::Decimal
     };
     (Hex) => {
         idiom_core::NumericBase::Hexadecimal
