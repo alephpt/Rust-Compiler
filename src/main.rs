@@ -1,52 +1,48 @@
 extern crate idiom_core;
+extern crate clap;
 
 use idiom_core::lexer::*;
 
-fn main() {
-    println!("Hello, Lexer!");
+use clap::{App, SubCommand};
 
-    let mut _lexer_delim = Lexer::new(",,{[([( ^ > $ < , < ) ) . . [ > ] > > ");
+fn main() -> std::io::Result<()> {
+    println!("Hello, Lexer!\n");
 
-    let mut _lexer_num = Lexer::new("
-        2113
-        .e
-        16b10FG23
-        16b16.4
-        48b1239419
-        16b10FA
-        16bG
-        203
-        0.5
-        2.2
-        .798
-        1e49
-        1e+49
-        .1e
-        .2.
-        e.5
-        2b1010
-        2b3
-        16bAF0
-        16bG
-        64bf02/(523&2393f0jaf
-        8b123751
-        8b99
-    ");
+    let application = App::new("Idiom")
+        .version("0.1a")
+        .author("Richard Christopher <alephpt1@gmail.com>\n")
+        .about("Idiom - An Expression that cannot be understood from the meanings of its seperate words, but must be learned as a whole of the expression. (Not to be taken Literally.) .. except this is a Compiler")
+        .arg_from_usage("-v --verbose   'Run with more information'")
+        .subcommand(SubCommand::with_name("debug").args_from_usage(
+            "
+            --show=[TOKENS]...   'Show specific steps in the compiling process (tokens, ast, ..)'
+            <INPUT>     'File to load'
 
-    let mut _lexer_func = Lexer::new(" 
-        go main, arg1 arg2 -
-        |   when, arg1 > arg2 -
-            |    value <- (arg1 + arg2).
-            _
-            ^ <- value.
-        _.
-    ");
+            "
+        ))
+        .get_matches();
 
-    loop {
-        match _lexer_num.next_token() {
-            Ok(TokenType::EOF) => break,
-            Ok(tok) => println!("{0:?}", tok),
-            Err(err) => println!("{0:?}", err),
+    match application.subcommand() {
+        ("debug", Some(matching)) => { 
+            let filename = matching.value_of("INPUT").unwrap();
+            let text = std::fs::read_to_string(filename)?;
+            let lexer = Lexer::new(&text);
+            let shows = matching.values_of("show").unwrap_or_default().collect::<Vec<&str>>();
+            if shows.contains(&"tokens") {
+                let mut lexer = lexer.clone();
+ 
+                loop {
+                    match lexer.next_token() {
+                        Ok(TokenType::EOF) => { println!("Breaking.. EOF.. "); break; },
+                        Ok(tok) => println!("{0:?}", tok),
+                        Err(err) => println!("{0:?}", err),
+                    }
+                }
+            }
         }
+        _ => {}
     }
+
+    Ok(())
+
 }

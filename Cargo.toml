@@ -8,4 +8,4 @@ edition = "2021"
 [dependencies]
 thiserror = "1.0"
 idiom_core = { path = "idiom_core" }
-tests = { path = "tests" }
+clap = "2.33.3"

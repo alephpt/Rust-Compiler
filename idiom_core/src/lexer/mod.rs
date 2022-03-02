@@ -24,23 +24,29 @@ pub enum LexerError {
     #[error("Invalid Numeric Character for {base:?} Number: {raw:?} Fails. {received:?} is invalid.")]
     InvalidNumericLiteral { base: NumericBase, raw: String, received: String }, // can we add expected behaviour?
 
-    #[error("Invalid Fraction: {raw:?}.")]
-    InvalidFraction { raw: String },
-    
+    #[error("Invalid Fraction: {received:?} in {raw:?}.")]
+    InvalidFractionalValue { raw: String, received: String },
+
     #[error("Invalid Base Number. {base:?} is Not a Valid Base implimented in Idiom_Core.")]
     InvalidNumericBase { base: String },
 
-    #[error("Invalid Binary Value: {bin:?}")]
-    InvalidBinaryValue { bin: String },
+    #[error("Invalid Binary Value: {invalid:?} in {raw:?}")]
+    InvalidBinaryValue { raw: String, invalid: String },
 
-    #[error("Invalid Hexadecimal Value: {hex:?}")]
-    InvalidHexValue { hex: String },
-
-    #[error("Invalid Octal Value: {oct:?}")]
-    InvalidOctValue { oct: String },
+    #[error("Invalid Octal Value: {invalid:?} in {raw:?}")]
+    InvalidOctalValue { raw: String, invalid: String },
+    
+    #[error("Invalid Decimal Value: {invalid:?} in {raw:?}")]
+    InvalidDecimalValue { raw: String, invalid: String },
+    
+    #[error("Invalid Hexadecimal Value: {invalid:?} in {raw:?}")]
+    InvalidHexadecimalValue { raw: String, invalid: String },
 
     #[error("Numerical Literal Collapsed. Found: {received:?}, Expected: {expected:?}")]
     NumericLiteralCollapse{ received: TokenType, expected: Numeric },
+
+    #[error("String Literal Collapsed. Missing Expected Symbol. Expected: {expected:?}. Found: {received:?}.")]
+    StringLiteralCollapse{ expected: String, received: TokenType },
 
     #[error("Unexpected Numeric Digest: {raw:?}, Received: {received:?}")]
     UnknownNumericLiteral{ raw: String, received: char },
@@ -81,6 +87,8 @@ pub enum TokenType {
     Character(char),
 
     Numeric{raw: String, base: NumericBase, kind: NumericKind},
+
+    String(String),
 
  //   Magic{raw: String, kind: MagicKind, form: MagicForm, component: MagicComponent}
 }

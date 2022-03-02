@@ -1,0 +1,43 @@
+go printer, words -| log <- words. ~
+
+
+go add, arg1 arg2 -
+|   
+^ (arg1 + arg2)
+~
+
+
+go subtract, arg1 arg2 -
+|   ^ (arg1 - arg2)
+~
+
+
+go multiply, arg1 arg2 - 
+|
+    ^ (arg1 * arg2) 
+~
+
+
+go divide, arg1 arg2 - |
+    ^ (arg1 / arg2)
+~
+
+go main, -
+|
+    dec value.
+
+    log <- "Enter your first Number: ".
+    userIn -> arg1.
+    log <- "Enter your second Number: ".
+    userIn -> arg2.
+
+    when, arg1 < arg2 -
+    |    value <- add, arg1 arg2 -.
+    ~ or when, arg1 > arg2 -
+    |    value <- subtract, arg1 arg2 -.
+    ~ or else | value <- "Hello, World". ~
+
+    printer, value -.
+
+    ^ 0.
+~
