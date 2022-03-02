@@ -10,8 +10,9 @@ fn main() -> std::io::Result<()> {
 
     let application = App::new("Idiom")
         .version("0.1a")
-        .author("Richard Christopher <alephpt1@gmail.com>\n")
-        .about("Idiom - An Expression that cannot be understood from the meanings of its seperate words, but must be learned as a whole of the expression. (Not to be taken Literally.) .. except this is a Compiler")
+        .author(" ")
+       // .author("Richard Christopher <alephpt1@gmail.com>")
+        .about(" - An Expression that cannot be understood from the meanings of its seperate words, but must be learned as a whole of the expression. (Not to be taken Literally.) \n\t.. except this is a Compiler")
         .arg_from_usage("-v --verbose   'Run with more information'")
         .subcommand(SubCommand::with_name("debug").args_from_usage(
             "

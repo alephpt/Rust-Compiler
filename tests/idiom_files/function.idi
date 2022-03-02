@@ -32,10 +32,14 @@ go main, -
     userIn -> arg2.
 
     when, arg1 < arg2 -
-    |    value <- add, arg1 arg2 -.
-    ~ or when, arg1 > arg2 -
+    |    add, arg1 arg2 --> value.
+    ~ 
+    or when, arg1 > arg2 -
     |    value <- subtract, arg1 arg2 -.
-    ~ or else | value <- "Hello, World". ~
+    ~ 
+    or else 
+    |    value <- "Hello, World". 
+    ~
 
     printer, value -.
 

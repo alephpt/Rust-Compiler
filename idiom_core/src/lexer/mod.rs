@@ -86,8 +86,10 @@ pub enum TokenType {
     /* A single Character */
     Character(char),
 
+    /* A group of Numeric Values */
     Numeric{raw: String, base: NumericBase, kind: NumericKind},
 
+    /* A String */
     String(String),
 
  //   Magic{raw: String, kind: MagicKind, form: MagicForm, component: MagicComponent}
